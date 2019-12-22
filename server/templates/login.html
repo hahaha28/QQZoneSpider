@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script src="/static/jquery-3.4.1.min.js"></script>
+    <meta charset="UTF-8">
+    <meta name="referrer" content="no-referrer"/>
+    <title>登录</title>
+</head>
+<script src="httpUtil.js"></script>
+<script>
+
+    var info;
+    function t() {
+        console.log("test")
+        var url = "http://127.0.0.1:5000";
+        var params={}
+        $.post(url,params,function(data){
+            console.log("123")
+            alert("hhh"+data);//这个data返回的数据
+            document.getElementById('test').innerHTML = data;
+        });
+    }
+    function start() {
+        $("#start").hide();
+    //    获取登录二维码
+        var url = "http://127.0.0.1:5000/get_qr_image_path";
+        $.get(url,function (data) {
+            document.getElementById("login_image").src=data;
+    
+        });
+
+    }
+</script>
+<body >
+    <p>QQ空间爬虫</p>
+    <button type="button" id="start" onclick="start()">开始使用</button>
+    <button type="button" id="login" onclick="t()">按钮</button>
+    <img src="" id="login_image" width="70" height="70"/>
+</body>
+</html>

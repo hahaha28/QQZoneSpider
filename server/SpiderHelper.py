@@ -30,6 +30,17 @@ class Spider:
         qr_image_path = self.driver.find_element_by_id('qrlogin_img').get_property('src')
         return qr_image_path
 
+    def get_login_image(self,file_path):
+        '''
+        获取登录二维码的截图
+        :param file_path: 截图保存路径
+        :return:
+        '''
+        self.driver.switch_to.frame('login_frame')
+        png = self.driver.find_element_by_id('qrlogin_img').screenshot_as_png
+        with open(file_path,'wb') as img:
+            img.write(png)
+
     def login(self):
         '''
         登录QQ空间
@@ -66,12 +77,7 @@ class Spider:
 
 
 
-if __name__ == '__main__':
-     sp = Spider()
-     time.sleep(5)
-     success = sp.login()
-     print(success)
-     print(sp.qqNum)
+
 
 
 
