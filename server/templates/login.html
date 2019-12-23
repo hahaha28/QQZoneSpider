@@ -1,52 +1,119 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <script src="/static/jquery-3.4.1.min.js"></script>
     <meta charset="UTF-8">
-    <meta name="referrer" content="no-referrer"/>
-    <title>登录</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
+          integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+    <script src="/static/jquery-3.4.1.min.js"></script>
+    <title>Title</title>
 </head>
-<script src="httpUtil.js"></script>
 <script>
+    var base_url = "http://127.0.0.1:5000";
 
-    var info;
-    var base_url = "http://127.0.0.1:5000"
-    function t() {
-        console.log("test")
-        var url = "http://127.0.0.1:5000";
-        var params={}
-        $.post(url,params,function(data){
-            console.log("123")
-            alert("hhh"+data);//这个data返回的数据
-            document.getElementById('test').innerHTML = data;
-        });
-    }
     function start() {
+        console.log("test");
         $("#start").hide();
+        document.getElementById("load_view").style.visibility = "visible";
         //    获取登录二维码
-        var url = base_url+"/get_qr_image_path";
-        $.get(url,function (data) {
-            document.getElementById("login_image").src=data;
-
+        var url = base_url + "/get_qr_image_path";
+        $.get(url, function (data) {
+            document.getElementById("qr_img").src = data;
+            //显示二维码
+            document.getElementById("load_view").style.visibility = "hidden";
+            document.getElementById("scan_view").style.visibility = "visible";
         });
     }
+
     function confirm() {
+        document.getElementById("scan_view").style.visibility = "hidden";
+        document.getElementById("load_view").style.visibility = "visible";
         var url = base_url+"/confirm_login";
         $.get(url,function (data) {
             console.log(data)
             if(data == 'success'){
                 window.location.href=base_url+"/function"
             }else{
-                alert(data);
+                alert("失败，如果确认扫描登录成功，多半是服务器还在加载，请重新点击\"扫描完成\"");
+                document.getElementById("load_view").style.visibility = "hidden";
+                document.getElementById("scan_view").style.visibility = "visible";
             }
 
         });
     }
+
+    function flush_img() {
+        console.log("flush_img")
+//    获取登录二维码
+        var url = base_url + "/flush_qr_image";
+        $.get(url, function (data) {
+            //显示二维码
+            document.getElementById("qr_img").src = data;
+        });
+    }
 </script>
-<body >
-<p>QQ空间爬虫</p>
-<button type="button" id="start" onclick="start()">开始使用</button>
-<button type="button" id="login" onclick="confirm()">已扫码</button>
-<img src="" id="login_image" width="70" height="70"/>
+<body>
+<div class="container">
+
+    <!-- 标题 -->
+    <hr>
+    <blockquote class="blockquote text-center">
+        <h1>QQ空间爬虫</h1>
+        <footer class="blockquote-footer"><cite title="Source Title">开源软件基础大作业</cite></footer>
+    </blockquote>
+    <hr>
+
+    <!-- 注意事项 -->
+    <div class="alert alert-success" role="alert">
+        <h4 class="alert-heading">使用须知</h4>
+        <hr>
+        <p>此项目后端跑的慢，前端写的烂</p>
+        <hr>
+        <p>使用一定要有耐心</p>
+        <hr>
+        <p class="mb-0">
+            <del>小bug肯定有</del>
+            ，刷新大法好，但请不要重复点按钮，
+            <del>服务器可能会炸</del>
+        </p>
+    </div>
+
+    <!-- 开始按钮 -->
+    <div class="blockquote text-center">
+        <div>
+            <button type="button" id="start" class="btn btn-primary btn-lg" onclick="start()">Start Now!</button>
+        </div>
+    </div>
+
+<!--    扫描二维码登录部分-->
+    <table align="center" id="scan_view" style="visibility: hidden">
+        <tr>
+            <td>
+                <div class="media">
+                    <img src="home_back.jpg" id="qr_img" class="rounded align-self-start mr-3"
+                         width="80" height="80"  onclick="flush_img()" alt="...">
+                    <div class="media-body">
+                        <h5 class="mt-0 font-weight-bold">请使用手机QQ扫描左侧二维码授权</h5>
+                        <p class="font-weight-light">如果二维码过期请点击图片刷新二维码</p>
+                    </div>
+                </div>
+            </td>
+            <td>
+                &nbsp&nbsp&nbsp&nbsp&nbsp
+            </td>
+            <td>
+                <button type="button" class="btn btn-primary" onclick="confirm()">扫描完成</button>
+            </td>
+        </tr>
+    </table>
+
+    <!--   正在加载View-->
+    <div align="center" id="load_view" style="visibility: hidden">
+        <div class="spinner-border text-primary" role="status">
+            <span class="sr-only">Loading...</span>
+        </div>
+        <p>正在加载，请稍等</p>
+    </div>
+
+</div>
 </body>
 </html>

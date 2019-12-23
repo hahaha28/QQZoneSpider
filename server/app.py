@@ -1,4 +1,4 @@
-from flask import Flask, render_template, session,request
+from flask import Flask, render_template, session, request
 from SpiderHelper import Spider
 from os import path
 import random
@@ -33,6 +33,17 @@ def get_login_qr_image_path():
     return "/static/" + file_name
 
 
+@app.route('/flush_qr_image')
+def flush_qr_image():
+    key = session.get('key')
+    spider = spider_temp[key]
+    base_path = path.abspath(path.dirname(__file__))
+    file_name = get_random_file_name()
+    img_path = path.join(base_path, 'static\\') + file_name
+    spider.flush_login_image(img_path)
+    return "/static/" + file_name
+
+
 @app.route('/confirm_login')
 def confirm_login():
     key = session.get('key')
@@ -48,10 +59,11 @@ def get_friends_qq_name():
     key = session.get('key')
     spider = spider_temp[key]
     base_path = path.abspath(path.dirname(__file__))
-    file_name = spider.my_qq_num+"friendList.xls"
+    file_name = spider.my_qq_num + "friendList.xls"
     file_path = path.join(base_path, 'static\\') + file_name
     spider.get_friends(file_path)
     return file_name
+
 
 @app.route('/get_mood')
 def get_one_mood():
@@ -61,10 +73,25 @@ def get_one_mood():
     base_path = path.abspath(path.dirname(__file__))
     file_name = qq + "_mood.xls"
     file_path = path.join(base_path, 'static\\') + file_name
-    if spider.get_mood(qq,file_path):
+    if spider.get_mood(qq, file_path):
         return file_name
     else:
         return "error"
+
+
+@app.route('/get_info')
+def get_one_info():
+    qq = request.args.to_dict()['qq']
+    key = session.get('key')
+    spider = spider_temp[key]
+    base_path = path.abspath(path.dirname(__file__))
+    file_name = qq + "_info.xls"
+    file_path = path.join(base_path, 'static\\') + file_name
+    if spider.get_info(qq, file_path):
+        return file_name
+    else:
+        return "error"
+
 
 def get_random_file_name():
     while True:
