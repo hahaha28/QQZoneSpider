@@ -1,24 +1,74 @@
-from flask import Flask,render_template,session
+from flask import Flask, render_template, session, make_response,send_file, send_from_directory
 from SpiderHelper import Spider
 from os import path
+import random
+import json
 
-app = Flask(__name__,static_url_path='/static')
+app = Flask(__name__, static_url_path='/static')
 app.secret_key = "sdsfdsgdfgdfgfh"
+spider_temp = {}
 
 
-@app.route('/',methods=['GET'])
+@app.route('/', methods=['GET'])
 def hello_world():
     return render_template('login.html')
 
+
+@app.route('/function')
+def function():
+    return render_template('function.html')
+
+
 @app.route('/get_qr_image_path')
 def get_login_qr_image_path():
-	session.spider = Spider()
-	base_path = path.abspath(path.dirname(__file__))
-	file_name = "test.png"
-	img_path = path.join(base_path,'static\\')+file_name
-	print(img_path)
-	session.spider.get_login_image(img_path)
-	return "/static/test.png"
+    spider = Spider()
+    key = get_random_key()
+    spider_temp[key] = spider
+    session['key'] = key
+    base_path = path.abspath(path.dirname(__file__))
+    file_name = get_random_file_name()
+    img_path = path.join(base_path, 'static\\') + file_name
+    print(img_path)
+    spider.get_login_image(img_path)
+    return "/static/" + file_name
+
+
+@app.route('/confirm_login')
+def confirm_login():
+    key = session.get('key')
+    spider = spider_temp[key]
+    if spider.login():
+        return "success"
+    else:
+        return "error"
+
+
+@app.route('/get_friends_qq_and_name')
+def get_friends_qq_name():
+    key = session.get('key')
+    spider = spider_temp[key]
+    base_path = path.abspath(path.dirname(__file__))
+    file_name = spider.my_qq_num+"friendList.xls"
+    file_path = path.join(base_path, 'static\\') + file_name
+    spider.get_friends(file_path)
+    return file_name
+
+
+def get_random_file_name():
+    while True:
+        num = random.randrange(10000000)
+        base_path = path.abspath(path.dirname(__file__))
+        file_name = str(num) + ".png"
+        img_path = path.join(base_path, 'static\\') + file_name
+        if not path.exists(img_path):
+            return file_name
+
+
+def get_random_key():
+    while True:
+        num = random.randrange(10000000)
+        if not num in spider_temp:
+            return str(num)
 
 
 if __name__ == '__main__':

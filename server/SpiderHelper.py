@@ -3,7 +3,8 @@
 from selenium import webdriver
 import requests
 import re
-import time
+from urllib import parse
+import xlwt
 
 
 class Spider:
@@ -30,7 +31,7 @@ class Spider:
         qr_image_path = self.driver.find_element_by_id('qrlogin_img').get_property('src')
         return qr_image_path
 
-    def get_login_image(self,file_path):
+    def get_login_image(self, file_path):
         '''
         获取登录二维码的截图
         :param file_path: 截图保存路径
@@ -38,7 +39,7 @@ class Spider:
         '''
         self.driver.switch_to.frame('login_frame')
         png = self.driver.find_element_by_id('qrlogin_img').screenshot_as_png
-        with open(file_path,'wb') as img:
+        with open(file_path, 'wb') as img:
             img.write(png)
 
     def login(self):
@@ -46,11 +47,10 @@ class Spider:
         登录QQ空间
         :return: 成功则返回true
         '''
-        time.sleep(5)   #暂停5秒等待网页加载
         cur_url = self.driver.current_url
-        if re.match('https://user.qzone.qq.com/(\d+)$',cur_url) != None:
-            self.qqNum = re.sub(r'\D',"",cur_url)   #qq号
-            self.driver.get('http://user.qzone.qq.com/{}'.format(self.qqNum))
+        if re.match('https://user.qzone.qq.com/(\d+)$', cur_url) != None:
+            self.my_qq_num = re.sub(r'\D', "", cur_url)  # qq号
+            # self.driver.get('http://user.qzone.qq.com/{}'.format(self.my_qq_num))
             cookie = ''
             for item in self.driver.get_cookies():
                 cookie += item["name"] + '=' + item['value'] + ';'
@@ -60,8 +60,55 @@ class Spider:
             self.driver.quit()
             return True
         else:
-            self.driver.quit()
             return False
+
+    def get_friends_url(self):
+        '''
+        构造好友请求链接
+        :return: 链接
+        '''
+        url = 'https://h5.qzone.qq.com/proxy/domain/base.qzone.qq.com/cgi-bin/right/get_entryuinlist.cgi?'
+        params = {
+            'uin': self.my_qq_num,
+            'ver': 1,
+            'fupdate': 1,
+            'action': 1,
+            'g_tk': self.g_tk
+        }
+        url = url + parse.urlencode(params)
+        return url
+
+    def get_friends(self,file_path):
+        '''
+        获取全部好友
+        :return: 好友以及对应QQ列表
+        '''
+        offset, t = 0, True
+        url = self.get_friends_url()
+        name, qq_num = [], []
+
+        while (t):
+            url_ = url + '&offset=' + str(offset)
+            page = self.req.get(url=url_, headers=self.headers)
+            if ('\"end\":1' and '\"uinlist\":[]') in page.text:
+                t = False
+            else:
+                names, qqs = re.findall('label":.*"', page.text), re.findall('"\d+"', page.text)
+                for _, __ in zip(names, qqs):
+                    name.append(re.sub('label":|"', '', _))
+                    qq_num.append(re.sub('"', '', __))
+            offset += 50
+        self.name, self.qq_num = name, qq_num
+        workbook = xlwt.Workbook()
+        worksheet = workbook.add_sheet('friend_list')
+        worksheet.write(0,0,"姓名")
+        worksheet.write(0,1,"QQ号")
+        i = 1
+        for na in name:
+            worksheet.write(i, 0, na)
+            worksheet.write(i, 1, qq_num[i-1])
+            i=i+1
+        workbook.save(file_path)
 
     def get_g_tk(self):
         '''
@@ -74,7 +121,6 @@ class Spider:
             h += (h << 5) + ord(i)
         print('g_tk', h & 2147483647)
         self.g_tk = h & 2147483647
-
 
 
 

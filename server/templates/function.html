@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <script src="/static/jquery-3.4.1.min.js"></script>
+    <title>功能</title>
+</head>
+<script>
+    var base_url = "http://127.0.0.1:5000";
+    function getFriendList() {
+        var url = base_url+"/get_friends_qq_and_name";
+        $.get(url,function (data) {
+            console.log(data)
+            window.location.href=base_url+"/static/"+data
+        });
+
+    }
+</script>
+<body>
+    <p><button type="button" onclick="getFriendList()">获取好友列表</button></p>
+</body>
+</html>

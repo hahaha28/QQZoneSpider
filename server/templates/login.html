@@ -10,6 +10,7 @@
 <script>
 
     var info;
+    var base_url = "http://127.0.0.1:5000"
     function t() {
         console.log("test")
         var url = "http://127.0.0.1:5000";
@@ -22,19 +23,30 @@
     }
     function start() {
         $("#start").hide();
-    //    获取登录二维码
-        var url = "http://127.0.0.1:5000/get_qr_image_path";
+        //    获取登录二维码
+        var url = base_url+"/get_qr_image_path";
         $.get(url,function (data) {
             document.getElementById("login_image").src=data;
-    
-        });
 
+        });
+    }
+    function confirm() {
+        var url = base_url+"/confirm_login";
+        $.get(url,function (data) {
+            console.log(data)
+            if(data == 'success'){
+                window.location.href=base_url+"/function"
+            }else{
+                alert(data);
+            }
+
+        });
     }
 </script>
 <body >
-    <p>QQ空间爬虫</p>
-    <button type="button" id="start" onclick="start()">开始使用</button>
-    <button type="button" id="login" onclick="t()">按钮</button>
-    <img src="" id="login_image" width="70" height="70"/>
+<p>QQ空间爬虫</p>
+<button type="button" id="start" onclick="start()">开始使用</button>
+<button type="button" id="login" onclick="confirm()">已扫码</button>
+<img src="" id="login_image" width="70" height="70"/>
 </body>
 </html>
