@@ -5,6 +5,7 @@ import requests
 import re
 from urllib import parse
 import xlwt
+import time
 
 
 class Spider:
@@ -109,6 +110,92 @@ class Spider:
             worksheet.write(i, 1, qq_num[i-1])
             i=i+1
         workbook.save(file_path)
+
+    def get_mood(self,qq,file_path):
+        url = 'https://user.qzone.qq.com/proxy/domain/taotao.qq.com/cgi-bin/emotion_cgi_msglist_v6?'
+        params = {
+            'inCharset': 'utf-8',
+            'outCharset': 'utf-8',
+            'sort': 0,
+            'num': 20,
+            'repllyunm': 100,
+            'cgi_host': 'http://taotao.qq.com/cgi-bin/emotion_cgi_msglist_v6',
+            'callback': '_preloadCallback',
+            'code_version': 1,
+            'format': 'jsonp',
+            'need_private_comment': 1,
+            'g_tk': self.g_tk
+        }
+        url = url + parse.urlencode(params)
+        t1, pos = True, 0
+        url_ = url + '&uin=' + str(qq)
+
+        #建立excel
+        workbook = xlwt.Workbook()
+        worksheet = workbook.add_sheet('mood')
+        worksheet.write(0, 0, "发布时间")
+        worksheet.write(0, 1, "发布设备")
+        worksheet.write(0, 2, "说说内容")
+        worksheet.write(0, 3, "转发数")
+        worksheet.write(0, 4, "回复内容")
+        worksheet.write(0, 5, "回复数")
+        worksheet.write(0, 6, "说说配图")
+        row = 1
+
+        while (t1):
+            url__ = url_ + '&pos=' + str(pos)
+            mood = self.req.get(url=url__, headers=self.headers)
+            if '\"msglist\":null' in mood.text:
+                t1 = False
+            elif "\"message\":\"对不起,主人设置了保密,您没有权限查看\"" in mood.text:
+                print("无权访问"+qq)
+                return False
+            else:
+                print("爬取"+qq+"说说")
+                # 创建时间
+                created_time = re.findall('created_time":\d+', mood.text)
+                # 发说说的设备
+                source = re.findall('source_appid":".*?"source_name":".*?"', mood.text)
+                # 说说内容
+                contents = re.findall('],"content":".*?"', mood.text)
+                # 转发数
+                forword = re.findall('fwdnum":\d+', mood.text)
+                # 回复内容
+                comment_content = re.findall('commentlist":(null|.*?],)', mood.text)
+                # 评论数
+                comments = re.findall('cmtnum":\d+', mood.text)
+                # 说说配图
+                pics = re.findall('","pic(_template|".*?])', mood.text)
+                # 点赞的链接
+                like_url = 'https://user.qzone.qq.com/proxy/domain/users.qzone.qq.com/cgi-bin/likes/get_like_list_app?'
+                # 说说的唯一标志
+                tids = re.findall('tid":".*?"', mood.text)
+
+                for _time, _source, _content, _forword, _comment_content, _comment, _pic, _tid in \
+                        zip(created_time, source, contents, forword, comment_content, comments, pics, tids):
+                    # 我要的说说内容
+                    mood = {
+                        'CreateTime': time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(int(re.sub('created_time":', '', _time)))),
+                        'source': re.sub('source_appid":".*?"source_name":"|"', '', _source),
+                        'content': re.sub('],"content":"|"', '', _content),
+                        'forward': re.sub('fwdnum":', '', _forword),
+                        'comment_content': re.sub('null|commentlist":', '', _comment_content) if 'null' in _comment_content else str([(re.sub('content":"|"', '', x), re.sub('createTime2":"|"', '', y), re.sub('name":"|"', '', z), re.sub('uin":', '', zz)) for x, y, z, zz in zip(re.findall('content":".*?"', _comment_content), re.findall('createTime2":".*?"', _comment_content), re.findall('name":".*?"', _comment_content), re.findall('uin":\d+', _comment_content))]),
+                        'comment': re.sub('cmtnum":', '', _comment),
+                        'pic': [] if 'template' in _pic else [re.sub('url2":|"', '', i) for i in re.findall('url2":".*?"', _pic)]
+                    }
+                    # print(mood)
+                    # 将说说保存在xls中
+                    worksheet.write(row,0,mood['CreateTime'])
+                    worksheet.write(row,1,mood['source'])
+                    worksheet.write(row,2,mood['content'])
+                    worksheet.write(row,3,mood['forward'])
+                    worksheet.write(row,4,mood['comment_content'])
+                    worksheet.write(row,5,mood['comment'])
+                    worksheet.write(row,6,mood['pic'])
+                    row = row+1
+                pos += 20
+        workbook.save(file_path)
+        return True
 
     def get_g_tk(self):
         '''

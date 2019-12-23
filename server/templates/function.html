@@ -13,10 +13,26 @@
             console.log(data)
             window.location.href=base_url+"/static/"+data
         });
-
+    }
+    function getMood() {
+        var qq = document.getElementById("mood_qq").value;
+        var url = base_url+"/get_mood"+"?qq="+qq;
+        console.log(url)
+        $.get(url,function (data) {
+            console.log(data)
+            if(data == "error"){
+                alert("您没有权限访问该qq："+qq+"的空间");
+            }else {
+                window.location.href = base_url + "/static/" + data
+            }
+        });
     }
 </script>
 <body>
     <p><button type="button" onclick="getFriendList()">获取好友列表</button></p>
+    <form>
+        <input type="number" name="qq" id="mood_qq">
+        <input type="button" value="获取该QQ号所有说说" onclick="getMood()">
+    </form>
 </body>
 </html>

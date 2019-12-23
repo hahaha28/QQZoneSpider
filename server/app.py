@@ -1,4 +1,4 @@
-from flask import Flask, render_template, session, make_response,send_file, send_from_directory
+from flask import Flask, render_template, session,request
 from SpiderHelper import Spider
 from os import path
 import random
@@ -53,6 +53,18 @@ def get_friends_qq_name():
     spider.get_friends(file_path)
     return file_name
 
+@app.route('/get_mood')
+def get_one_mood():
+    qq = request.args.to_dict()['qq']
+    key = session.get('key')
+    spider = spider_temp[key]
+    base_path = path.abspath(path.dirname(__file__))
+    file_name = qq + "_mood.xls"
+    file_path = path.join(base_path, 'static\\') + file_name
+    if spider.get_mood(qq,file_path):
+        return file_name
+    else:
+        return "error"
 
 def get_random_file_name():
     while True:
