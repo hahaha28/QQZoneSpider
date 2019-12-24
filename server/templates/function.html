@@ -2,20 +2,19 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
+          integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
     <script src="/static/jquery-3.4.1.min.js"></script>
     <title>功能</title>
 </head>
 <script>
-    var base_url = "http://127.0.0.1:5000";
-    function getFriendList() {
-        var url = base_url+"/get_friends_qq_and_name";
-        $.get(url,function (data) {
-            console.log(data)
-            window.location.href=base_url+"/static/"+data
-        });
-    }
+    const base_url = "http://127.0.0.1:5000";
     function getMood() {
         var qq = document.getElementById("mood_qq").value;
+        if(qq == ""){
+            alert("请填写qq号");
+            return;
+        }
         var url = base_url+"/get_mood"+"?qq="+qq;
         console.log(url)
         $.get(url,function (data) {
@@ -29,6 +28,10 @@
     }
     function getInfo() {
         var qq = document.getElementById("info_qq").value;
+        if(qq == ""){
+            alert("请填写qq号");
+            return;
+        }
         var url = base_url+"/get_info"+"?qq="+qq;
         console.log(url);
         $.get(url,function (data) {
@@ -41,15 +44,53 @@
         });
     }
 </script>
-<body>
-    <p><button type="button" onclick="getFriendList()">获取好友列表</button></p>
-    <form>
-        <input type="number" name="qq" id="info_qq">
-        <input type="button" value="获取该QQ号个人信息" onclick="getInfo()">
-    </form>
-    <form>
-        <input type="number" name="qq" id="mood_qq">
-        <input type="button" value="获取该QQ号所有说说" onclick="getMood()">
-    </form>
+<body style="background-color: #EDF0F9">
+<div class="container">
+
+    <div style="margin-top: 20px">
+
+        <div class="d-flex justify-content-around">
+
+            <!-- 个人信息 -->
+            <div class="card" style="width: 18rem;">
+                <div class="card-body">
+                    <h5 class="card-title">个人信息</h5>
+                    <p class="card-text">爬取指定QQ号的个人基本信息，包括名称，生日，地区等。爬取的前提是你
+                        有该QQ号的空间访问权限。</p>
+                    <br><br>
+
+
+                    <form >
+                        <div class="form-group">
+                            <input type="number" min="1" class="form-control"
+                                   id="info_qq" placeholder="QQ号" required>
+                        </div>
+                        <button type="button" class="btn btn-primary"
+                            onclick="getInfo()">Run</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- 说说 -->
+            <div class="card" style="width: 18rem;">
+                <div class="card-body">
+                    <h5 class="card-title">说说</h5>
+                    <p class="card-text">爬取指定QQ号的所有说说。爬取的前提是你
+                        有该QQ号的空间访问权限。</p>
+                    <p class="card-text">如果此人说说较多（例如几千条）则要等特别久。</p>
+                    <form>
+                        <div class="form-group">
+                            <input type="number" min="1" class="form-control"
+                                   id="mood_qq" placeholder="QQ号" required>
+                        </div>
+                        <button type="button" class="btn btn-primary"
+                             onclick="getMood()">Run</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
 </body>
 </html>
