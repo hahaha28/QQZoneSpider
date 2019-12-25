@@ -39,7 +39,12 @@
             if(data == "error"){
                 alert("您没有权限访问该qq："+qq+"的空间");
             }else {
-                window.location.href = base_url + "/static/" + data
+                // window.location.href = base_url + "/static/" + data
+                var dw;
+                dw=window.open();
+                dw.document.open();
+                dw.document.write(data);
+                dw.document.close();
             }
         });
     }
@@ -50,7 +55,6 @@
     <div style="margin-top: 20px">
 
         <div class="d-flex justify-content-around">
-
             <!-- 个人信息 -->
             <div class="card" style="width: 18rem;">
                 <div class="card-body">
@@ -70,7 +74,6 @@
                     </form>
                 </div>
             </div>
-
             <!-- 说说 -->
             <div class="card" style="width: 18rem;">
                 <div class="card-body">
@@ -88,6 +91,9 @@
                     </form>
                 </div>
             </div>
+        </div>
+        <div>
+
         </div>
     </div>
 

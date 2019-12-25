@@ -2,9 +2,9 @@ from flask import Flask, render_template, session, request
 from SpiderHelper import Spider
 from os import path
 import random
-import json
 
 app = Flask(__name__, static_url_path='/static')
+
 app.secret_key = "sdsfdsgdfgdfgfh"
 spider_temp = {}
 
@@ -13,6 +13,13 @@ spider_temp = {}
 def hello_world():
     return render_template('login.html')
 
+@app.route('/test')
+def test():
+    return "ok"
+
+@app.route('/test2')
+def test2():
+    return render_template('test.html')
 
 @app.route('/function')
 def function():
@@ -84,14 +91,15 @@ def get_one_info():
     qq = request.args.to_dict()['qq']
     key = session.get('key')
     spider = spider_temp[key]
-    base_path = path.abspath(path.dirname(__file__))
-    file_name = qq + "_info.xls"
-    file_path = path.join(base_path, 'static\\') + file_name
-    if spider.get_info(qq, file_path):
-        return file_name
+    # base_path = path.abspath(path.dirname(__file__))
+    # file_name = qq + "_info.xls"
+    # file_path = path.join(base_path, 'static\\') + file_name
+    info = spider.get_info(qq)
+    print(info)
+    if info is not None:
+        return render_template('show_info.html',data=info)
     else:
         return "error"
-
 
 def get_random_file_name():
     while True:
@@ -111,4 +119,5 @@ def get_random_key():
 
 
 if __name__ == '__main__':
+    app.config["JSON_AS_ASCII"] = False
     app.run()

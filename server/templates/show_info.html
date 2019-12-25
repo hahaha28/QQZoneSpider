@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
+          integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+    <script src="/static/jquery-3.4.1.min.js"></script>
+    <title>Title</title>
+</head>
+<script>
+    var data = {{data|safe}};
+    function init() {
+        var jsonObj = data;
+        var tr = document.getElementById("tr");
+        for(i in jsonObj){
+            var td = document.createElement("td");
+            td.innerText = jsonObj[i];
+            tr.appendChild(td);
+        }
+    }
+</script>
+<body onload="init()">
+    <div id="data"></div>
+    <table class="table table-hover">
+        <thead>
+        <tr>
+            <th scope="col">QQ号</th>
+            <th scope="col">名称</th>
+            <th scope="col">空间名称</th>
+            <th scope="col">描述</th>
+            <th scope="col">个性签名</th>
+            <th scope="col">性别</th>
+            <th scope="col">年龄</th>
+            <th scope="col">生日</th>
+            <th scope="col">星座</th>
+<th scope="col">国家</th>
+            <th scope="col">省份</th>
+            <th scope="col">城市</th>
+            <th scope="col">家乡</th>
+            <th scope="col">结婚</th>
+            <th scope="col">职业</th>
+            <th scope="col">地址</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr id="tr">
+
+        </tr>
+        </tbody>
+    </table>
+</body>
+</html>

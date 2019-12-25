@@ -1,12 +1,15 @@
 # coding=utf-8
 
+from __future__ import unicode_literals
 from selenium import webdriver
 import requests
 import re
 from urllib import parse
 import xlwt
 import time
-import random
+from dbutil import DButil
+import json
+
 
 
 class Spider:
@@ -23,6 +26,8 @@ class Spider:
         }
         self.req = requests.Session()
         self.cookies = {}
+        self.state_info = []
+        self.db = DButil()
 
     def get_qr_image_path(self):
         '''
@@ -222,7 +227,16 @@ class Spider:
         workbook.save(file_path)
         return True
 
-    def get_info(self, qq, file_path):
+    def get_info(self, qq):
+        #先查询数据库是否有
+        result = self.db.find_info(qq)
+        if result is not None:
+            print("info not None")
+            return json.dumps(result,ensure_ascii=False)
+        print("request info")
+        #数据库没有则开始爬取
+        self.state_info.clear()
+        self.add_state("开始构造请求连接")
         url = 'https://h5.qzone.qq.com/proxy/domain/base.qzone.qq.com/cgi-bin/user/cgi_userinfo_get_all?'
         params = {
             'vuin': self.my_qq_num,
@@ -231,72 +245,69 @@ class Spider:
         }
         url = url + parse.urlencode(params)
 
-        t3 = True
         url_ = url + '&uin=' + str(qq)
 
         #建立excel表
-        workbook = xlwt.Workbook()
-        worksheet = workbook.add_sheet('info')
-        worksheet.write(0, 0, "QQ号")
-        worksheet.write(0, 1, "名称")
-        worksheet.write(0, 2, "空间名称")
-        worksheet.write(0, 3, "描述")
-        worksheet.write(0, 4, "个性签名")
-        worksheet.write(0, 5, "性别")
-        worksheet.write(0, 6, "年龄")
-        worksheet.write(0, 7, "生日")
-        worksheet.write(0, 8, "星座")
-        worksheet.write(0, 9, "国家")
-        worksheet.write(0, 10, "省份")
-        worksheet.write(0, 11, "城市")
-        worksheet.write(0, 12, "家乡")
-        worksheet.write(0, 13, "结婚")
-        worksheet.write(0, 14, "职业")
-        worksheet.write(0, 15, "地址")
+        # workbook = xlwt.Workbook()
+        # worksheet = workbook.add_sheet('info')
+        # worksheet.write(0, 0, "QQ号")
+        # worksheet.write(0, 1, "名称")
+        # worksheet.write(0, 2, "空间名称")
+        # worksheet.write(0, 3, "描述")
+        # worksheet.write(0, 4, "个性签名")
+        # worksheet.write(0, 5, "性别")
+        # worksheet.write(0, 6, "年龄")
+        # worksheet.write(0, 7, "生日")
+        # worksheet.write(0, 8, "星座")
+        # worksheet.write(0, 9, "国家")
+        # worksheet.write(0, 10, "省份")
+        # worksheet.write(0, 11, "城市")
+        # worksheet.write(0, 12, "家乡")
+        # worksheet.write(0, 13, "结婚")
+        # worksheet.write(0, 14, "职业")
+        # worksheet.write(0, 15, "地址")
 
-
-        while (t3):
-            info = self.req.get(url=url_, headers=self.headers)
-            if '\"message\":\"您无权访问\"' in info.text:
-                t3 = False
-                return False
-            else:
-                text = info.text
-                sex, marriage = ['其他', '男', '女'], ['未填写', '单身', '已婚', '保密', '恋爱中']
-                constellation = ['白羊座', '金牛座', '双子座', '巨蟹座', '狮子座', '处女座', '天秤座', '天蝎座', '射手座', '摩羯座', '水瓶座', '双鱼座',
-                                 '未填写']
-                data = {
-                    'qq':qq,
-                    'nickname': re.sub('nickname":"|"', '', re.search('nickname":".*?"', text).group()),
-                    'spacename': re.sub('spacename":"|"', '', re.search('spacename":".*?"', text).group()),
-                    'desc': re.sub('desc":"|"', '', re.search('desc":".*?"', text).group()),
-                    'signature': re.sub('signature":"|"', '', re.search('signature":".*?"', text).group()),
-                    'sex': sex[int(re.sub('sex":', '', re.search('sex":\d+', text).group()))],
-                    'age': re.sub('"age":', '', re.search('"age":\d+', text).group()),
-                    'birthday': re.sub('birthyear":', '', re.search('birthyear":\d+', text).group()) + '-' + re.sub(
-                        'birthday":"|"', '', re.search('birthday":".*"', text).group()),
-                    'constellation': constellation[int(
-                        re.sub('constellation":|,', '', re.search('constellation":.*,', text).group()).replace('-1',
-                                                                                                               '12'))],
-                    'country': re.sub('country":"|"', '', re.search('country":".*"', text).group()),
-                    'province': re.sub('province":"|"', '', re.search('province":".*?"', text).group()),
-                    'city': re.sub('city":"|"', '', re.search('city":".*?"', text).group()),
-                    'hometown': re.sub('hco":"|"|,|\n|hc|hp|:', '', re.search('hco":".*\n".*\n".*', text).group()),
-                    'marriage': marriage[int(re.sub('marriage":', '', re.search('marriage":\d', text).group()))],
-                    'career': re.sub('career":"|"', '', re.search('career":".*?"', text).group()),
-                    'address': re.sub('cb":"|"', '', re.search('cb":".*?"', text).group())
-                }
-                value_list = data.values()
-                i=0
-                for value in value_list:
-                    worksheet.write(1,i,value)
-                    i=i+1
-                print("好友数据")
-                print(data)
-                # 数据写入数据库表Person中
-                t3 = False
-        workbook.save(file_path)
-        return True
+        info = self.req.get(url=url_, headers=self.headers)
+        if '\"message\":\"您无权访问\"' in info.text:
+            return None
+        else:
+            text = info.text
+            sex, marriage = ['其他', '男', '女'], ['未填写', '单身', '已婚', '保密', '恋爱中']
+            constellation = ['白羊座', '金牛座', '双子座', '巨蟹座', '狮子座', '处女座', '天秤座', '天蝎座', '射手座', '摩羯座', '水瓶座', '双鱼座',
+                             '未填写']
+            data = {
+                'qq':qq,
+                'nickname': re.sub('nickname":"|"', '', re.search('nickname":".*?"', text).group()),
+                'spacename': re.sub('spacename":"|"', '', re.search('spacename":".*?"', text).group()),
+                'desc': re.sub('desc":"|"', '', re.search('desc":".*?"', text).group()),
+                'signature': re.sub('signature":"|"', '', re.search('signature":".*?"', text).group()),
+                'sex': sex[int(re.sub('sex":', '', re.search('sex":\d+', text).group()))],
+                'age': re.sub('"age":', '', re.search('"age":\d+', text).group()),
+                'birthday': re.sub('birthyear":', '', re.search('birthyear":\d+', text).group()) + '-' + re.sub(
+                    'birthday":"|"', '', re.search('birthday":".*"', text).group()),
+                'constellation': constellation[int(
+                    re.sub('constellation":|,', '', re.search('constellation":.*,', text).group()).replace('-1',
+                                                                                                           '12'))],
+                'country': re.sub('country":"|"', '', re.search('country":".*"', text).group()),
+                'province': re.sub('province":"|"', '', re.search('province":".*?"', text).group()),
+                'city': re.sub('city":"|"', '', re.search('city":".*?"', text).group()),
+                'hometown': re.sub('hco":"|"|,|\n|hc|hp|:', '', re.search('hco":".*\n".*\n".*', text).group()),
+                'marriage': marriage[int(re.sub('marriage":', '', re.search('marriage":\d', text).group()))],
+                'career': re.sub('career":"|"', '', re.search('career":".*?"', text).group()),
+                'address': re.sub('cb":"|"', '', re.search('cb":".*?"', text).group())
+            }
+            result = json.dumps(data,ensure_ascii=False)
+            # 插入数据库
+            self.db.insert_info(data)
+            # value_list = data.values()
+            # i=0
+            # for value in value_list:
+            #     worksheet.write(1,i,value)
+            #     i=i+1
+            print("好友数据")
+            print(data)
+            t3 = False
+            return result
 
     def get_g_tk(self):
         '''
@@ -309,3 +320,7 @@ class Spider:
             h += (h << 5) + ord(i)
         print('g_tk', h & 2147483647)
         self.g_tk = h & 2147483647
+
+    def add_state(self,info):
+        t = time.strftime("%H:%M:%S", time.localtime())
+        self.state_info.append(info+"  "+t)
