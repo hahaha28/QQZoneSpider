@@ -127,7 +127,23 @@ class Spider:
             i = i + 1
         workbook.save(file_path)
 
-    def get_mood(self, qq, file_path):
+    def get_mood(self, qq):
+        # 先查询数据库是否有数据
+        data_list = self.db.find_simple_mood(qq)
+        if data_list is not None:
+            print("数据库已有说说数据")
+            # 只返回50条数据
+            json_list = data_list
+            if len(data_list) > 50:
+                json_list = data_list[:50]
+            json_list.append({
+                'total': len(data_list),
+                'from': data_list[-1]['CreateTime'],
+                'to': data_list[0]['CreateTime']
+            })
+            return json.dumps(json_list,ensure_ascii=False)
+
+        # 没有数据则爬
         url = 'https://user.qzone.qq.com/proxy/domain/taotao.qq.com/cgi-bin/emotion_cgi_msglist_v6?'
         params = {
             'inCharset': 'utf-8',
@@ -147,16 +163,19 @@ class Spider:
         url_ = url + '&uin=' + str(qq)
 
         # 建立excel
-        workbook = xlwt.Workbook()
-        worksheet = workbook.add_sheet('mood')
-        worksheet.write(0, 0, "发布时间")
-        worksheet.write(0, 1, "发布设备")
-        worksheet.write(0, 2, "说说内容")
-        worksheet.write(0, 3, "转发数")
-        worksheet.write(0, 4, "回复内容")
-        worksheet.write(0, 5, "回复数")
-        worksheet.write(0, 6, "说说配图")
-        row = 1
+        # workbook = xlwt.Workbook()
+        # worksheet = workbook.add_sheet('mood')
+        # worksheet.write(0, 0, "发布时间")
+        # worksheet.write(0, 1, "发布设备")
+        # worksheet.write(0, 2, "说说内容")
+        # worksheet.write(0, 3, "转发数")
+        # worksheet.write(0, 4, "回复内容")
+        # worksheet.write(0, 5, "回复数")
+        # worksheet.write(0, 6, "说说配图")
+        # row = 1
+        # 要返回的json数组
+        json_list = []
+        mood_num =0
 
         while (t1):
             url__ = url_ + '&pos=' + str(pos)
@@ -165,7 +184,7 @@ class Spider:
                 t1 = False
             elif "\"message\":\"对不起,主人设置了保密,您没有权限查看\"" in mood.text:
                 print("无权访问" + qq)
-                return False
+                return None
             else:
                 # 创建时间
                 created_time = re.findall('created_time":\d+', mood.text)
@@ -213,19 +232,47 @@ class Spider:
                         'pic': [] if 'template' in _pic else [re.sub('url2":|"', '', i) for i in
                                                               re.findall('url2":".*?"', _pic)]
                     }
-                    # print(mood)
+                    mood_num = mood_num+1
+                    print(mood)
                     # 将说说保存在xls中
-                    worksheet.write(row, 0, mood['CreateTime'])
-                    worksheet.write(row, 1, mood['source'])
-                    worksheet.write(row, 2, mood['content'])
-                    worksheet.write(row, 3, mood['forward'])
-                    worksheet.write(row, 4, mood['comment_content'])
-                    worksheet.write(row, 5, mood['comment'])
-                    worksheet.write(row, 6, mood['pic'])
-                    row = row + 1
+                    # worksheet.write(row, 0, mood['CreateTime'])
+                    # worksheet.write(row, 1, mood['source'])
+                    # worksheet.write(row, 2, mood['content'])
+                    # worksheet.write(row, 3, mood['forward'])
+                    # worksheet.write(row, 4, mood['comment_content'])
+                    # worksheet.write(row, 5, mood['comment'])
+                    # worksheet.write(row, 6, mood['pic'])
+                    # row = row + 1
+
+                    # 将数据存入数据库
+                    self.db.insert_mood(mood,qq)
+
+                    # 将要返回的数据留下来
+                    del mood['_id']
+                    del mood['source']
+                    del mood['forward']
+                    del mood['comment_content']
+                    del mood['comment']
+                    del mood['pic']
+                    json_list.append(mood)
                 pos += 20
-        workbook.save(file_path)
-        return True
+        # workbook.save(file_path)
+        #只返回50条说说数据
+        if len(json_list) > 50:
+            json_list = json_list[:50]
+        if mood_num == 0:
+            json_list.append({
+                'total':mood_num,
+                'from':'0',
+                'to':'0'
+            })
+        else:
+            json_list.append({
+                'total':mood_num,
+                'from':json_list[-1]['CreateTime'],
+                'to':json_list[0]['CreateTime']
+            })
+        return json.dumps(json_list,ensure_ascii=False)
 
     def get_info(self, qq):
         #先查询数据库是否有
@@ -308,6 +355,32 @@ class Spider:
             print(data)
             t3 = False
             return result
+
+    def write_mood_to_xls(self,qq,file_path):
+        # 建立excel
+        workbook = xlwt.Workbook()
+        worksheet = workbook.add_sheet('mood')
+        worksheet.write(0, 0, "发布时间")
+        worksheet.write(0, 1, "发布设备")
+        worksheet.write(0, 2, "说说内容")
+        worksheet.write(0, 3, "转发数")
+        worksheet.write(0, 4, "回复内容")
+        worksheet.write(0, 5, "回复数")
+        worksheet.write(0, 6, "说说配图")
+
+        result = self.db.find_mood(qq)
+        row = 1
+        for mood in result:
+            # 将说说保存在xls中
+            worksheet.write(row, 0, mood['CreateTime'])
+            worksheet.write(row, 1, mood['source'])
+            worksheet.write(row, 2, mood['content'])
+            worksheet.write(row, 3, mood['forward'])
+            worksheet.write(row, 4, mood['comment_content'])
+            worksheet.write(row, 5, mood['comment'])
+            worksheet.write(row, 6, mood['pic'])
+            row = row+1
+        workbook.save(file_path)
 
     def get_g_tk(self):
         '''

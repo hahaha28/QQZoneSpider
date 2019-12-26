@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
+          integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+    <script src="/static/jquery-3.4.1.min.js"></script>
+    <title>说说</title>
+</head>
+<script>
+    const base_url="http://127.0.0.1:5000";
+    // var data = {{data|safe}};
+    var data = sessionStorage.getItem("data");
+    console.log(data);
+    const qq = sessionStorage.getItem("qq");
+    function init() {
+        var jsonObjs = JSON.parse(data);
+        const len = jsonObjs.length;
+        var body = document.getElementById("table-body");
+        for (i in jsonObjs) {
+            if (i == len-1) {
+                const total = jsonObjs[i].total;
+                const from = jsonObjs[i].from;
+                const to = jsonObjs[i].to;
+                var str = "共"+total+"条说说，从"+from+"到"+to+"。";
+                if(len>50){
+                    str = str+"本页面最多显示50条说说。";
+                }
+                document.getElementById("text").innerText=str;
+            } else {
+                var tr = document.createElement("tr");
+                var td1 = document.createElement("td");
+                var td3 = document.createElement("td");
+                td1.innerText = jsonObjs[i].CreateTime;
+                td3.innerText = jsonObjs[i].content;
+                tr.appendChild(td1);
+                tr.appendChild(td3);
+                body.appendChild(tr);
+            }
+        }
+    }
+    function download() {
+        console.log("下载");
+        const url = base_url+"/download_mood?qq="+qq;
+        console.log(url);
+        $.get(url,function (data) {
+            console.log(data);
+            window.location.href=base_url+"/static/"+data;
+        })
+    }
+</script>
+<body onload="init()" style="background-color: #EDF0F9">
+<div class="d-flex justify-content-around"
+     style="margin-top: 30px;margin-left: 30px;margin-bottom: 30px">
+    <h5 id="text">
+        "共"+total+"条说说，从"+from+"到"+to+"。本页面最多显示50条说说"</h5>
+    <div >
+        <button type="button" id="download" class="btn btn-primary"
+            onclick="download()">下载全部说说到本地</button>
+    </div>
+</div>
+<table class="table table-hover">
+    <thead>
+    <tr>
+        <th scope="col">发布时间</th>
+        <th scope="col">内容</th>
+    </tr>
+    </thead>
+    <tbody id="table-body">
+    </tbody>
+</table>
+</body>
+</html>

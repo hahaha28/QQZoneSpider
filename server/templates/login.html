@@ -5,7 +5,7 @@
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
           integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
     <script src="/static/jquery-3.4.1.min.js"></script>
-    <title>Title</title>
+    <title>登录</title>
 </head>
 <script>
     var base_url = "http://127.0.0.1:5000";
@@ -43,7 +43,7 @@
 
     function flush_img() {
         console.log("flush_img")
-//    获取登录二维码
+        //    获取登录二维码
         var url = base_url + "/flush_qr_image";
         $.get(url, function (data) {
             //显示二维码
@@ -51,8 +51,8 @@
         });
     }
 </script>
-<body>
-<div class="container">
+<body >
+<div class="container" >
 
     <!-- 标题 -->
     <hr>

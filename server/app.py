@@ -77,14 +77,31 @@ def get_one_mood():
     qq = request.args.to_dict()['qq']
     key = session.get('key')
     spider = spider_temp[key]
-    base_path = path.abspath(path.dirname(__file__))
-    file_name = qq + "_mood.xls"
-    file_path = path.join(base_path, 'static\\') + file_name
-    if spider.get_mood(qq, file_path):
-        return file_name
+    json_data = spider.get_mood(qq)
+    print("json_data=")
+    print(json_data)
+    if json_data is not None:
+        # return render_template('show_mood.html',data=json_data,qq=qq)
+        return json_data
     else:
         return "error"
 
+
+@app.route('/show_mood')
+def show_mood():
+    return render_template('show_mood.html')
+
+
+@app.route('/download_mood')
+def download_mood():
+    qq = request.args.to_dict()['qq']
+    key = session.get('key')
+    spider = spider_temp[key]
+    base_path = path.abspath(path.dirname(__file__))
+    file_name = qq + "_mood.xls"
+    file_path = path.join(base_path, 'static\\') + file_name
+    spider.write_mood_to_xls(qq,file_path)
+    return file_name
 
 @app.route('/get_info')
 def get_one_info():
@@ -100,6 +117,7 @@ def get_one_info():
         return render_template('show_info.html',data=info)
     else:
         return "error"
+
 
 def get_random_file_name():
     while True:

@@ -22,7 +22,14 @@
             if(data == "error"){
                 alert("您没有权限访问该qq："+qq+"的空间");
             }else {
-                window.location.href = base_url + "/static/" + data
+                sessionStorage.setItem("data",data);
+                sessionStorage.setItem("qq",qq);
+                window.open(base_url+"/show_mood");
+                // var dw;
+                // dw=window.open();
+                // dw.document.open();
+                // dw.document.write(data);
+                // dw.document.close();
             }
         });
     }
