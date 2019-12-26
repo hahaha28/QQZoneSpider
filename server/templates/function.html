@@ -8,6 +8,7 @@
     <title>功能</title>
 </head>
 <script>
+    var id;
     const base_url = "http://127.0.0.1:5000";
     function getMood() {
         var qq = document.getElementById("mood_qq").value;
@@ -16,20 +17,19 @@
             return;
         }
         var url = base_url+"/get_mood"+"?qq="+qq;
-        console.log(url)
+        console.log(url);
+        load_view();    //显示加载页面
+        interval_send();    //获取加载信息
         $.get(url,function (data) {
-            console.log(data)
+            console.log(data);
+            function_view();    //显示功能页面
+            stop_interval_send();   //停止获取加载信息
             if(data == "error"){
                 alert("您没有权限访问该qq："+qq+"的空间");
             }else {
                 sessionStorage.setItem("data",data);
                 sessionStorage.setItem("qq",qq);
                 window.open(base_url+"/show_mood");
-                // var dw;
-                // dw=window.open();
-                // dw.document.open();
-                // dw.document.write(data);
-                // dw.document.close();
             }
         });
     }
@@ -41,8 +41,12 @@
         }
         var url = base_url+"/get_info"+"?qq="+qq;
         console.log(url);
+        load_view();    //显示加载页面
+        interval_send();    //获取加载信息
         $.get(url,function (data) {
             console.log(data);
+            function_view();    //显示功能页面
+            stop_interval_send();   //停止获取加载信息
             if(data == "error"){
                 alert("您没有权限访问该qq："+qq+"的空间");
             }else {
@@ -55,11 +59,60 @@
             }
         });
     }
+    function getWordCloud(){
+        var qq = document.getElementById("wordcloud_qq").value;
+        if(qq == ""){
+            alert("请填写qq号");
+            return;
+        }
+        var url = base_url+"/get_word_cloud?qq="+qq;
+        console.log(url);
+        load_view();    //显示加载页面
+        interval_send();    //获取加载信息
+        $.get(url,function (data) {
+            console.log(data);
+            function_view();    //显示功能页面
+            stop_interval_send();   //停止获取加载信息
+            if(data == "error"){
+                alert("您没有权限访问该qq："+qq+"的空间");
+            }else {
+                // window.location.href = base_url + "/static/" + data
+                window.open(base_url+"/static/"+data);
+            }
+        });
+    }
+    function interval_send() {
+        id = window.setInterval(send,1*1000)
+    }
+    function send() {
+        const url = base_url+"/get_state_info";
+        $.get(url,function (data) {
+            var status_text = document.getElementById("status-text");
+            var json_array = JSON.parse(data);
+            var text = "";
+            for(i in json_array){
+                text = text+json_array[i]+"\n";
+            }
+            status_text.innerText = text;
+        })
+    }
+    function stop_interval_send() {
+        window.clearInterval(id);
+        document.getElementById("status-text").innerText="";
+    }
+    function function_view() {
+        document.getElementById("function-view").style.display = "";
+        document.getElementById("load-view").style.display = "none";
+    }
+    function load_view() {
+        document.getElementById("function-view").style.display = "none";
+        document.getElementById("load-view").style.display = "";
+    }
 </script>
 <body style="background-color: #EDF0F9">
-<div class="container">
+<div class="container" >
 
-    <div style="margin-top: 20px">
+    <div id="function-view" style="display: flow;margin-top: 20px">
 
         <div class="d-flex justify-content-around">
             <!-- 个人信息 -->
@@ -98,9 +151,40 @@
                     </form>
                 </div>
             </div>
+            <!-- 词云 -->
+            <div class="card" style="width: 18rem;">
+                <div class="card-body">
+                    <h5 class="card-title">词云</h5>
+                    <p class="card-text">根据指定QQ号的所有说说生成词云。前提是你
+                        有该QQ号的空间访问权限。</p>
+                    <p class="card-text">如果此人说说较多（例如几千条）则要等特别久。</p>
+                    <form>
+                        <div class="form-group">
+                            <input type="number" min="1" class="form-control"
+                                   id="wordcloud_qq" placeholder="QQ号" required>
+                        </div>
+                        <button type="button" class="btn btn-primary"
+                                onclick="getWordCloud()">Run</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        <div class="d-flex justify-content-around">
+
         </div>
         <div>
 
+        </div>
+    </div>
+
+    <div id="load-view" style="display:none;margin-top: 20px">
+        <div>
+            <div class="spinner-border text-primary" role="status">
+                <span class="sr-only">Loading...</span>
+            </div>
+            <div  style="margin-top: 10px">
+                <pre id="status-text"></pre>
+            </div>
         </div>
     </div>
 

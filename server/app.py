@@ -1,3 +1,4 @@
+# coding=utf-8 #
 from flask import Flask, render_template, session, request
 from SpiderHelper import Spider
 from os import path
@@ -103,6 +104,7 @@ def download_mood():
     spider.write_mood_to_xls(qq,file_path)
     return file_name
 
+
 @app.route('/get_info')
 def get_one_info():
     qq = request.args.to_dict()['qq']
@@ -117,6 +119,29 @@ def get_one_info():
         return render_template('show_info.html',data=info)
     else:
         return "error"
+
+
+@app.route('/get_word_cloud')
+def get_word_cloud():
+    qq = request.args.to_dict()['qq']
+    key = session.get('key')
+    spider = spider_temp[key]
+    base_path = path.abspath(path.dirname(__file__))
+    file_name = qq + "_moods_content.txt"
+    pic_name = qq+ '_wordcloud.jpg'
+    file_path = path.join(base_path, 'static\\') + file_name
+    pic_path = path.join(base_path, 'static\\') + pic_name
+    r = spider.generate_word_cloud(qq,file_path,pic_path)
+    if r is None:
+        return "error"
+    return pic_name
+
+
+@app.route('/get_state_info')
+def get_state_info():
+    key = session.get('key')
+    spider = spider_temp[key]
+    return spider.get_state_json()
 
 
 def get_random_file_name():

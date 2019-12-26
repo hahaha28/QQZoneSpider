@@ -9,6 +9,7 @@ import xlwt
 import time
 from dbutil import DButil
 import json
+import wcutil
 
 
 
@@ -128,10 +129,13 @@ class Spider:
         workbook.save(file_path)
 
     def get_mood(self, qq):
+        self.state_info.clear()
+        self.add_state('查询数据库是否有数据')
+
         # 先查询数据库是否有数据
         data_list = self.db.find_simple_mood(qq)
         if data_list is not None:
-            print("数据库已有说说数据")
+            self.add_state('数据库已有说说数据')
             # 只返回50条数据
             json_list = data_list
             if len(data_list) > 50:
@@ -143,6 +147,8 @@ class Spider:
             })
             return json.dumps(json_list,ensure_ascii=False)
 
+        self.add_state('数据库无数据')
+        self.add_state('构造请求链接')
         # 没有数据则爬
         url = 'https://user.qzone.qq.com/proxy/domain/taotao.qq.com/cgi-bin/emotion_cgi_msglist_v6?'
         params = {
@@ -176,7 +182,7 @@ class Spider:
         # 要返回的json数组
         json_list = []
         mood_num =0
-
+        self.add_state('开始爬取数据')
         while (t1):
             url__ = url_ + '&pos=' + str(pos)
             mood = self.req.get(url=url__, headers=self.headers)
@@ -233,16 +239,7 @@ class Spider:
                                                               re.findall('url2":".*?"', _pic)]
                     }
                     mood_num = mood_num+1
-                    print(mood)
-                    # 将说说保存在xls中
-                    # worksheet.write(row, 0, mood['CreateTime'])
-                    # worksheet.write(row, 1, mood['source'])
-                    # worksheet.write(row, 2, mood['content'])
-                    # worksheet.write(row, 3, mood['forward'])
-                    # worksheet.write(row, 4, mood['comment_content'])
-                    # worksheet.write(row, 5, mood['comment'])
-                    # worksheet.write(row, 6, mood['pic'])
-                    # row = row + 1
+                    # print(mood)
 
                     # 将数据存入数据库
                     self.db.insert_mood(mood,qq)
@@ -255,9 +252,10 @@ class Spider:
                     del mood['comment']
                     del mood['pic']
                     json_list.append(mood)
+                self.add_state(f'已爬取{mood_num}条数据')
                 pos += 20
-        # workbook.save(file_path)
         #只返回50条说说数据
+        self.add_state('爬取完成，正在返回数据')
         if len(json_list) > 50:
             json_list = json_list[:50]
         if mood_num == 0:
@@ -275,6 +273,8 @@ class Spider:
         return json.dumps(json_list,ensure_ascii=False)
 
     def get_info(self, qq):
+        self.state_info.clear()
+        self.add_state('查询数据库是否有数据')
         #先查询数据库是否有
         result = self.db.find_info(qq)
         if result is not None:
@@ -282,7 +282,7 @@ class Spider:
             return json.dumps(result,ensure_ascii=False)
         print("request info")
         #数据库没有则开始爬取
-        self.state_info.clear()
+        self.add_state('数据库无数据')
         self.add_state("开始构造请求连接")
         url = 'https://h5.qzone.qq.com/proxy/domain/base.qzone.qq.com/cgi-bin/user/cgi_userinfo_get_all?'
         params = {
@@ -293,29 +293,10 @@ class Spider:
         url = url + parse.urlencode(params)
 
         url_ = url + '&uin=' + str(qq)
-
-        #建立excel表
-        # workbook = xlwt.Workbook()
-        # worksheet = workbook.add_sheet('info')
-        # worksheet.write(0, 0, "QQ号")
-        # worksheet.write(0, 1, "名称")
-        # worksheet.write(0, 2, "空间名称")
-        # worksheet.write(0, 3, "描述")
-        # worksheet.write(0, 4, "个性签名")
-        # worksheet.write(0, 5, "性别")
-        # worksheet.write(0, 6, "年龄")
-        # worksheet.write(0, 7, "生日")
-        # worksheet.write(0, 8, "星座")
-        # worksheet.write(0, 9, "国家")
-        # worksheet.write(0, 10, "省份")
-        # worksheet.write(0, 11, "城市")
-        # worksheet.write(0, 12, "家乡")
-        # worksheet.write(0, 13, "结婚")
-        # worksheet.write(0, 14, "职业")
-        # worksheet.write(0, 15, "地址")
-
+        self.add_state('发送请求连接，开始爬取')
         info = self.req.get(url=url_, headers=self.headers)
         if '\"message\":\"您无权访问\"' in info.text:
+            self.add_state('无权访问该qq空间')
             return None
         else:
             text = info.text
@@ -353,6 +334,7 @@ class Spider:
             #     i=i+1
             print("好友数据")
             print(data)
+            self.add_state('爬取成功')
             t3 = False
             return result
 
@@ -382,6 +364,24 @@ class Spider:
             row = row+1
         workbook.save(file_path)
 
+    def generate_word_cloud(self,qq,file_path,pic_path):
+        self.state_info.clear()
+        self.add_state('查找说说数据')
+        moods = self.db.find_mood(qq)
+        if len(moods) == 0:
+            return None
+        if moods is None:
+            # 如果数据库没有说说数据，先爬
+            if self.get_mood(qq) is None:
+                # 如果获取不到说说，返回None
+                return None
+            moods = self.db.find_mood(qq)
+        self.add_state('将说说内容写入文件...')
+        wcutil.write_content(moods,file_path)
+        self.add_state('根据说说文件生成词云...')
+        wcutil.generate_word_cloud(file_path,pic_path)
+        return pic_path
+
     def get_g_tk(self):
         '''
         获取g_tk()
@@ -393,6 +393,9 @@ class Spider:
             h += (h << 5) + ord(i)
         print('g_tk', h & 2147483647)
         self.g_tk = h & 2147483647
+
+    def get_state_json(self):
+        return json.dumps(self.state_info,ensure_ascii=False)
 
     def add_state(self,info):
         t = time.strftime("%H:%M:%S", time.localtime())
