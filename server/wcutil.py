@@ -26,7 +26,7 @@ def generate_word_cloud(source_file_path,to_file_path):
     with open(source_file_path, 'r', encoding='utf-8') as w:
         t = w.read()
     ls = jieba.lcut(t)
-    text = "".join(ls)
+    text = " ".join(ls)
     w = wordcloud.WordCloud(font_path="C:/Windows/Fonts/simfang.ttf", width=1000, height=800, background_color='white')
     w.generate(text)
     w.to_file(to_file_path)
